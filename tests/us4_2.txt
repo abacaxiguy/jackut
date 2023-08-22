@@ -16,4 +16,3 @@ expectError "Não há recados." lerRecado id=${id2}
 expectError "Não há recados." lerRecado id=${id3}
 
 encerrarSistema
-quit
