@@ -1,116 +1,110 @@
 package br.ufal.ic.p2.jackut;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
+import br.ufal.ic.p2.jackut.Exceptions.*;
 import easyaccept.EasyAccept;
-
-// # User Story 1 - Criação de conta
-// # Permita a um usuário criar uma conta no Jackut . Deve ser fornecido um login, uma senha e um nome com o qual o usuário será conhecido na rede.
-
-// zerarSistema
-
-// # Obs.: usar codificação de caracteres ISO 8859
-// expectError "Usuário não cadastrado." getAtributoUsuario login=jpsauve atributo=nome
-
-// criarUsuario login=jpsauve senha=sauvejp nome="Jacques Sauve"
-
-// expect "Jacques Sauve" getAtributoUsuario login=jpsauve atributo=nome
-
-// # O comando abrirSessao retorna uma id que pode ser atribuída a uma variável do EasyAccept para referência posterior no script, como você
-// # poderá ver, por exemplo, na user story 2. A gente inventou esse comando por questão de segurança, para simular um usuário entrando a
-// # senha e iniciando um modo privado de uso do sistema. Nesse caso da us1_1, ele está sendo usado meramente para testar a
-// # senha (porque não podemos usar "expect getAtributoUsuario atributo=senha", justamente pelas questões de segurança). Se a senha
-// # estiver correta, a sessão é aberta e o teste passa sem erros. Se a senha não estiver implementada corretamente (ou estiver errada), o
-// # programa vai lançar uma exceção e o EasyAccept vai acusar erro nessa linha.
-// abrirSessao login=jpsauve senha=sauvejp
-
-// ###################
-// # testes de todas as outras combinacoes importantes para o comando criarUsuario
-// ###################
-// # cada usuario esta associado a um unico login, com o qual eh identificado no sistema; dois usuarios nao podem ter o mesmo login
-
-// expectError "Conta com esse nome já existe." criarUsuario login=jpsauve senha=##$@!# nome="Jacques Sauve II"
-
-// # entretanto, se o login for diferente, dois usuários podem ter o mesmo nome
-
-// criarUsuario login=jpsauve2 senha=sauvejp nome="Jacques Sauve"
-
-// expect "Jacques Sauve" getAtributoUsuario login=jpsauve2 atributo=nome
-// abrirSessao login=jpsauve2 senha=sauvejp
-
-// expectError "Login inválido." criarUsuario login= senha=fasdh nome="Jacques Sauve"
-// expectError "Senha inválida." criarUsuario login=jpsauve3 senha= nome="Jacques Sauve"
-// # nome vazio pode
-// criarUsuario login=jpsauve3 senha=3sauvejp nome=""
-
-// ###################
-// # testes de todas as outras combinacoes importantes para o comando abrirSessao
-// ###################
-// # observe que ao dar erro, não queremos dizer se o erro foi login ou senha
-// # Isso é a forma padrao de tratar o assunto pois, desta forma, o hacker tem que advinhar ambos ao mesmo tempo
-// # em vez de quebrar login e senha separadamente
-
-// expectError "Login ou senha inválidos." abrirSessao login=jpsauve senha=x
-// expectError "Login ou senha inválidos." abrirSessao login=x senha=x
-// expectError "Login ou senha inválidos." abrirSessao login= senha=x
-// expectError "Login ou senha inválidos." abrirSessao login=jpsauve senha=
-
-// encerrarSistema
-// quit
 
 
 public class Facade {
     private Map<String, Usuario> usuarios;
     private Usuario usuarioLogado;
+    private String sessao;
 
     public Facade() {
-        this.usuarios = new HashMap<>();
-        this.usuarioLogado = null;
+        // Inicializa o sistema com os dados mantidos em arquivo.
+        // Se não houver arquivo, inicia o sistema sem usuários cadastrados.
+        try{
+            File arquivo = new File("usuarios.txt");
+            if(arquivo.exists()){
+                this.usuarios = new HashMap<>();
+                this.usuarioLogado = null;
+                this.sessao = null;
+
+                String[] dados;
+                String linha;
+
+                BufferedReader br = new BufferedReader(new FileReader(arquivo));
+
+                while ((linha = br.readLine()) != null) {
+                    dados = linha.split(";");
+                    Usuario usuario = new Usuario(dados[0], dados[1], dados[2]);
+                    for(int i = 3; i < dados.length; i++){
+                        String[] atributo = dados[i].split(":");
+                        usuario.getPerfil().setAtributo(atributo[0], atributo[1]);
+                    }
+                    this.usuarios.put(dados[0], usuario);
+                }
+                br.close();
+            }else{
+                this.usuarios = new HashMap<>();
+                this.usuarioLogado = null;
+                this.sessao = null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void zerarSistema() {
-        this.usuarios = new HashMap<>();
-        this.usuarioLogado = null;
+        // Apaga todos os dados mantidos no sistema.
+        try {
+            File arquivo = new File("usuarios.txt");
+            arquivo.delete();
+            this.usuarios = new HashMap<>();
+            this.usuarioLogado = null;
+            this.sessao = null;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public void criarUsuario(String login, String senha, String nome) {
+    public void criarUsuario(String login, String senha, String nome) throws LoginSenhaInvalidosException, ContaJaExisteException {
+        // Cria um usuário com os dados da conta fornecidos.
+
         if (login == null || login.equals("")) {
-            throw new RuntimeException("Login inválido.");
+            throw new LoginSenhaInvalidosException("login");
         }
 
         if (senha == null || senha.equals("")) {
-            throw new RuntimeException("Senha inválida.");
+            throw new LoginSenhaInvalidosException("senha");
         }
 
         if (this.usuarios.containsKey(login)) {
-            throw new RuntimeException("Conta com esse nome já existe.");
+            throw new ContaJaExisteException();
         }
         this.usuarios.put(login, new Usuario(login, senha, nome));
     }
 
-    public String abrirSessao(String login, String senha) {
-        String idSessao = null;
-
+    public String abrirSessao(String login, String senha) throws LoginSenhaInvalidosException {
         if (!this.usuarios.containsKey(login)) {
-            throw new RuntimeException("Login ou senha inválidos.");
+            throw new LoginSenhaInvalidosException("any");
         }
 
         Usuario usuario = this.usuarios.get(login);
 
         if (!usuario.getSenha().equals(senha)) {
-            throw new RuntimeException("Login ou senha inválidos.");
+            throw new LoginSenhaInvalidosException("any");
         }
-        
+
         this.usuarioLogado = usuario;
-        idSessao = login;
-    
-        return idSessao;
+        this.sessao = UUID.randomUUID().toString();
+
+        return this.sessao;
     }
 
-    public String getAtributoUsuario(String login, String atributo) {
+    public String getAtributoUsuario(String login, String atributo)
+            throws UsuarioNaoCadastradoException, AtributoNaoPreenchidoException {
         if (!this.usuarios.containsKey(login)) {
-            throw new RuntimeException("Usuário não cadastrado.");
+            throw new UsuarioNaoCadastradoException();
         }
 
         Usuario usuario = this.usuarios.get(login);
@@ -118,12 +112,46 @@ public class Facade {
         if (atributo.equals("nome")) {
             return usuario.getNome();
         } else {
-            throw new RuntimeException("Atributo desconhecido.");
+            return usuario.getPerfil().getAtributo(atributo);
         }
     }
 
-    public void encerrarSistema() {
-        
+    public void editarPerfil(String id, String atributo, String valor) throws UsuarioNaoCadastradoException, AtributoNaoPreenchidoException {
+        if (this.sessao == null || this.usuarioLogado == null) {
+            throw new UsuarioNaoCadastradoException();
+        }
+
+        Usuario usuario = this.usuarioLogado;
+
+        usuario.getPerfil().setAtributo(atributo, valor);
+    }
+
+    public void encerrarSistema() throws AtributoNaoPreenchidoException {
+        // Grava o cadastro em arquivo e encerra o programa. Atingir o final de um
+        // script (final de arquivo) é equivalente a encontrar este comando.
+        // Neste caso, o comando não tem parâmetros, e salvará nesse momento apenas os usuários cadastrados.
+
+        try {
+            File arquivo = new File("usuarios.txt");
+            arquivo.createNewFile();
+
+            FileWriter fw = new FileWriter(arquivo);
+            BufferedWriter bw = new BufferedWriter(fw);
+
+            for (Usuario usuario : this.usuarios.values()) {
+                bw.write(usuario.getLogin() + ";" + usuario.getSenha() + ";" + usuario.getNome());
+                for (String atributo : usuario.getPerfil().getAtributos().keySet()) {
+                    bw.write(";" + atributo + ":" + usuario.getPerfil().getAtributo(atributo));
+                }
+                bw.newLine();
+            }
+
+            bw.flush();
+            bw.close();
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

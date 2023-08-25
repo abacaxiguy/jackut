@@ -4,11 +4,13 @@ public class Usuario {
     private String login;
     private String senha;
     private String nome;
+    private Perfil perfil;
 
     public Usuario(String login, String senha, String nome) {
         this.login = login;
         this.senha = senha;
         this.nome = nome;
+        this.perfil = new Perfil();
     }
 
     public String getLogin() {
@@ -29,5 +31,9 @@ public class Usuario {
 
     public void setNome(String nome) {
         this.nome = nome;
+    }
+
+    public Perfil getPerfil() {
+        return this.perfil;
     }
 }
