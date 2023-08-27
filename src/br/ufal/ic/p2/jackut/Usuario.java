@@ -1,16 +1,33 @@
 package br.ufal.ic.p2.jackut;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
+
+/**
+ * <p> Classe que representa um usuário. </p>
+ */
 
 public class Usuario {
-    private String login;
-    private String senha;
-    private String nome;
-    private Perfil perfil;
-    private ArrayList<Usuario> amigos;
-    private ArrayList<Usuario> solicitacoesEnviadas;
-    private ArrayList<Usuario> solicitacoesRecebidas;
+    private final String login;
+    private final String senha;
+    private final String nome;
+    private final Perfil perfil;
+    private final ArrayList<Usuario> amigos;
+    private final ArrayList<Usuario> solicitacoesEnviadas;
+    private final ArrayList<Usuario> solicitacoesRecebidas;
+    private final Queue<Recado> recados;
 
+    /**
+     * <p> Constrói um novo {@code Usuario} do Jackut. </p>
+     * <p> Inicializa um {@code Perfil} para o usuário, as listas de amigos, solicitações enviadas e solicitações recebidas. </p>
+     *
+     * @param login Login do usuário.
+     * @param senha Senha do usuário.
+     * @param nome Nome do usuário.
+     *
+     * @see Perfil
+     */
     public Usuario(String login, String senha, String nome) {
         this.login = login;
         this.senha = senha;
@@ -19,40 +36,78 @@ public class Usuario {
         this.amigos = new ArrayList<>();
         this.solicitacoesEnviadas = new ArrayList<>();
         this.solicitacoesRecebidas = new ArrayList<>();
+        this.recados = new LinkedList<>();
     }
+
+    /**
+     * <p> Retorna o login do usuário. </p>
+     *
+     * @return Login do usuário.
+     */
 
     public String getLogin() {
         return this.login;
     }
 
+    /**
+     * <p> Verifica se a senha passada como parâmetro é igual à senha do usuário. </p>
+     *
+     * @param senha  Senha a ser verificada.
+     * @return       True se a senha for igual, false caso contrário.
+     */
+
+    public boolean verificarSenha(String senha) {
+        return this.senha.equals(senha);
+    }
+
+    /**
+     * <p> Retorna a senha do usuário. </p>
+     *
+     * @return Senha do usuário.
+     */
+
     public String getSenha() {
         return this.senha;
     }
+
+    /**
+     * <p> Retorna o nome do usuário. </p>
+     *
+     * @return Nome do usuário.
+     */
 
     public String getNome() {
         return this.nome;
     }
 
-    public void setSenha(String senha) {
-        this.senha = senha;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    /**
+     * <p> Retorna o perfil do usuário. </p>
+     *
+     * @return Perfil do usuário.
+     *
+     * @see Perfil
+     */
 
     public Perfil getPerfil() {
         return this.perfil;
     }
 
-    public void setPerfil(Perfil perfil) {
-        this.perfil = perfil;
-    }
+    /**
+     * <p> Envia uma solicitação de amizade para o usuário passado como parâmetro. </p>
+     *
+     * @param usuario Usuário para o qual a solicitação será enviada.
+     */
 
     public void enviarSolicitacao(Usuario usuario) {
         this.solicitacoesEnviadas.add(usuario);
         usuario.solicitacoesRecebidas.add(this);
     }
+
+    /**
+     * <p> Aceita uma solicitação de amizade. </p>
+     *
+     * @param usuario Usuário que enviou a solicitação.
+     */
 
     public void aceitarSolicitacao(Usuario usuario) {
         this.amigos.add(usuario);
@@ -61,15 +116,80 @@ public class Usuario {
         usuario.solicitacoesEnviadas.remove(this);
     }
 
+    /**
+     * <p> Retornar a lista de amigos do usuário. </p>
+     *
+     * @return Lista de amigos do usuário.
+     */
+
     public ArrayList<Usuario> getAmigos() {
         return this.amigos;
     }
+
+    /**
+     * <p> Retorna a lista de solicitações de amizade enviadas pelo usuário. </p>
+     *
+     * @return Lista de solicitações de amizade enviadas pelo usuário
+     */
 
     public ArrayList<Usuario> getSolicitacoesEnviadas() {
         return this.solicitacoesEnviadas;
     }
 
+    /**
+     * <p> Retorna a lista de solicitações de amizade recebidas pelo usuário. </p>
+     *
+     * @return Lista de solicitações de amizade recebidas pelo usuário.
+     */
+
     public ArrayList<Usuario> getSolicitacoesRecebidas() {
         return this.solicitacoesRecebidas;
+    }
+
+    /**
+     * <p> Envia um recado para o usuário passado como parâmetro. </p>
+     *
+     * @param destinatario  Usuário para o qual o recado será enviado.
+     * @param recado        Recado a ser enviado.
+     */
+
+    public void enviarRecado(Usuario destinatario, String recado) {
+        Recado r = new Recado(this, destinatario, recado);
+        destinatario.recados.add(r);
+    }
+
+    /**
+     * <p> Retorna o recado mais antigo do usuário. </p>
+     *
+     * @return Recado mais antigo do usuário.
+     */
+
+    public Recado getRecado() {
+        return this.recados.poll();
+    }
+
+    /**
+     * <p> Adiciona um amigo ao usuário. </p>
+     * <p> Método utilizado para carregar os dados do arquivo. Não deve ser utilizado para adicionar amigos. </p>
+     *
+     * @param amigo Amigo a ser adicionado.
+     */
+
+    public void setAmigo(Usuario amigo) {
+        if (!this.amigos.contains(amigo)) {
+            this.amigos.add(amigo);
+        }
+    }
+
+    /**
+     * <p> Retorna a lista de recados não lidos do usuário. </p>
+     *
+     * @return Lista de recados não lidos do usuário.
+     *
+     * @see Recado
+     */
+
+    public Queue<Recado> getRecados() {
+        return this.recados;
     }
 }
