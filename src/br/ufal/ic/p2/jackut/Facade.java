@@ -28,7 +28,15 @@ public class Facade {
     public Facade() {
         this.sistema = new Sistema();
 
-        try{
+        try {
+            String caminho = "./database";
+
+            File diretorio = new File(caminho);
+
+            if (!diretorio.exists()) {
+                diretorio.mkdir();
+            }
+
             File arquivo = new File("./database/usuarios.txt");
             if (arquivo.exists()) {
                 String[] dados;
@@ -383,6 +391,14 @@ public class Facade {
 
     public void encerrarSistema() throws AtributoNaoPreenchidoException {
         try {
+            String caminho = "./database";
+
+            File diretorio = new File(caminho);
+
+            if (!diretorio.exists()) {
+                diretorio.mkdir();
+            }
+
             File arquivoUsuarios = new File("./database/usuarios.txt");
             arquivoUsuarios.createNewFile();
 

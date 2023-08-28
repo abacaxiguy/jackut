@@ -7,6 +7,7 @@ import br.ufal.ic.p2.jackut.Exceptions.AtributoNaoPreenchidoException;
 /**
  * <p> Classe que representa um perfil de usuário. </p>
  */
+
 public class Perfil {
     private final Map<String, String> atributos = new HashMap<>();
 
