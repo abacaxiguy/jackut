@@ -28,6 +28,7 @@ public class Usuario {
      *
      * @see Perfil
      */
+
     public Usuario(String login, String senha, String nome) {
         this.login = login;
         this.senha = senha;

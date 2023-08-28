@@ -172,7 +172,7 @@ public class Facade {
             throw new LoginSenhaInvalidosException("any");
         }
 
-        this.sistema.setUsuarioLogado(usuario);
+        this.sistema.setSessaoUsuario(usuario);
 
         return this.sistema.getSessao(usuario);
     }
@@ -217,7 +217,7 @@ public class Facade {
 
     public void editarPerfil(String id, String atributo, String valor)
             throws UsuarioNaoCadastradoException {
-        Usuario usuario = this.sistema.getUsuarioLogado(id);
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
 
         if (usuario == null) {
             throw new UsuarioNaoCadastradoException();
@@ -241,7 +241,7 @@ public class Facade {
 
     public void adicionarAmigo(String id, String amigo) throws UsuarioJaAmigoException, UsuarioNaoCadastradoException,
             UsuarioAutoAdicaoAmigoException, UsuarioJaSolicitouAmizadeException {
-        Usuario usuario = this.sistema.getUsuarioLogado(id);
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
         Usuario amigoUsuario = this.sistema.getUsuario(amigo);
 
         if (amigoUsuario == null || usuario == null) {
@@ -330,7 +330,7 @@ public class Facade {
      */
 
     public void enviarRecado(String id, String destinatario, String recado) throws UsuarioNaoCadastradoException, UsuarioAutoEnvioRecadoException {
-        Usuario usuario = this.sistema.getUsuarioLogado(id);
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
         Usuario destinatarioUsuario = this.sistema.getUsuario(destinatario);
 
         if (usuario == null || destinatarioUsuario == null) {
@@ -356,7 +356,7 @@ public class Facade {
      */
 
     public String lerRecado(String id) throws UsuarioNaoCadastradoException, NaoHaRecadosExcpetion {
-        Usuario usuario = this.sistema.getUsuarioLogado(id);
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
 
         if (usuario == null) {
             throw new UsuarioNaoCadastradoException();

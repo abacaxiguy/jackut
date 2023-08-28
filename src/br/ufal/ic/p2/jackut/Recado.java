@@ -18,6 +18,7 @@ public class Recado {
      *
      * @see Usuario
      */
+
     public Recado(Usuario remetente, Usuario destinatario, String recado) {
         this.remetente = remetente;
         this.destinatario = destinatario;

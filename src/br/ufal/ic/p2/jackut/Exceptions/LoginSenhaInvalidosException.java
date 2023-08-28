@@ -14,6 +14,7 @@ public class LoginSenhaInvalidosException extends RuntimeException {
      *
      * @param type Tipo de exceção a ser lançada.
      */
+
     public LoginSenhaInvalidosException(String type) {
         super(type.equals("login") ? "Login inválido." : type.equals("senha") ? "Senha inválida." : "Login ou senha inválidos.");
     }
