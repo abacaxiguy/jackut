@@ -1,12 +1,5 @@
 package br.ufal.ic.p2.jackut;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-
 import br.ufal.ic.p2.jackut.Exceptions.*;
 
 /**
@@ -27,85 +20,6 @@ public class Facade {
 
     public Facade() {
         this.sistema = new Sistema();
-
-        try {
-            String caminho = "./database";
-
-            File diretorio = new File(caminho);
-
-            if (!diretorio.exists()) {
-                diretorio.mkdir();
-            }
-
-            File arquivo = new File("./database/usuarios.txt");
-            if (arquivo.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-                    String login = dados[0];
-                    String senha = dados[1];
-                    String nome = "";
-                    if (dados.length > 2) {
-                        nome = dados[2];
-                    }
-
-                    Usuario usuario = new Usuario(login, senha, nome);
-                    for (int i = 3; i < dados.length; i++) {
-                        String[] atributo = dados[i].split(":");
-                        usuario.getPerfil().setAtributo(atributo[0], atributo[1]);
-                    }
-                    this.sistema.setUsuario(usuario);
-                }
-                br.close();
-            }
-
-            File arquivo2 = new File("./database/amigos.txt");
-            if (arquivo2.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo2));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-                    Usuario usuario = this.sistema.getUsuario(dados[0]);
-
-                    if (dados[1].length() <= 2) {
-                        continue;
-                    }
-
-                    String[] amigos = dados[1].substring(1, dados[1].length() - 1).split(",");
-
-                    for (String amigo : amigos) {
-                        usuario.setAmigo(this.sistema.getUsuario(amigo));
-                    }
-                }
-                br.close();
-            }
-
-            File arquivo3 = new File("./database/recados.txt");
-            if (arquivo3.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo3));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-                    Usuario usuario = this.sistema.getUsuario(dados[0]);
-                    Usuario amigo = this.sistema.getUsuario(dados[1]);
-                    String recado = dados[2];
-                    amigo.enviarRecado(usuario, recado);
-                }
-                br.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -115,17 +29,7 @@ public class Facade {
      */
 
     public void zerarSistema() {
-        try {
-            File arquivo = new File("./database/usuarios.txt");
-            arquivo.delete();
-            File arquivo2 = new File("./database/amigos.txt");
-            arquivo2.delete();
-            File arquivo3 = new File("./database/recados.txt");
-            arquivo3.delete();
-            this.sistema.zerarSistema();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.sistema.zerarSistema();
     }
 
     /**
@@ -142,19 +46,8 @@ public class Facade {
      */
 
     public void criarUsuario(String login, String senha, String nome) throws LoginSenhaInvalidosException, ContaJaExisteException {
-        if (login == null) {
-            throw new LoginSenhaInvalidosException("login");
-        }
-
-        if (senha == null) {
-            throw new LoginSenhaInvalidosException("senha");
-        }
-
-        if (this.sistema.getUsuario(login) != null) {
-            throw new ContaJaExisteException();
-        }
-
         Usuario usuario = new Usuario(login, senha, nome);
+
         this.sistema.setUsuario(usuario);
     }
 
@@ -166,23 +59,12 @@ public class Facade {
      * @param senha  Senha do usuário
      * @return       ID da sessão
      *
-     * @throws LoginSenhaInvalidosException Exceção lançada caso o login ou a senha sejam inválidos
+     * @throws LoginSenhaInvalidosException   Exceção lançada caso o login ou a senha sejam inválidos
+     * @throws UsuarioNaoCadastradoException  Exceção lançada caso o usuário não esteja cadastrado
      */
 
-    public String abrirSessao(String login, String senha) throws LoginSenhaInvalidosException {
-        Usuario usuario = this.sistema.getUsuario(login);
-
-        if (usuario == null) {
-            throw new LoginSenhaInvalidosException("any");
-        }
-
-        if (!usuario.verificarSenha(senha)) {
-            throw new LoginSenhaInvalidosException("any");
-        }
-
-        this.sistema.setSessaoUsuario(usuario);
-
-        return this.sistema.getSessao(usuario);
+    public String abrirSessao(String login, String senha) throws LoginSenhaInvalidosException, UsuarioNaoCadastradoException {
+        return this.sistema.abrirSessao(login, senha);
     }
 
     /**
@@ -200,15 +82,7 @@ public class Facade {
             throws UsuarioNaoCadastradoException, AtributoNaoPreenchidoException {
         Usuario usuario = this.sistema.getUsuario(login);
 
-        if (usuario == null) {
-            throw new UsuarioNaoCadastradoException();
-        }
-
-        if (atributo.equals("nome")) {
-            return usuario.getNome();
-        } else {
-            return usuario.getPerfil().getAtributo(atributo);
-        }
+        return usuario.getAtributo(atributo);
     }
 
     /**
@@ -226,11 +100,6 @@ public class Facade {
     public void editarPerfil(String id, String atributo, String valor)
             throws UsuarioNaoCadastradoException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
-
-        if (usuario == null) {
-            throw new UsuarioNaoCadastradoException();
-        }
-
 
         usuario.getPerfil().setAtributo(atributo, valor);
     }
@@ -252,25 +121,7 @@ public class Facade {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
         Usuario amigoUsuario = this.sistema.getUsuario(amigo);
 
-        if (amigoUsuario == null || usuario == null) {
-            throw new UsuarioNaoCadastradoException();
-        }
-
-        if (usuario.getLogin().equals(amigoUsuario.getLogin())) {
-            throw new UsuarioAutoAdicaoAmigoException();
-        }
-
-        if (usuario.getAmigos().contains(amigoUsuario) || amigoUsuario.getAmigos().contains(usuario)) {
-            throw new UsuarioJaAmigoException();
-        }
-
-        if (usuario.getSolicitacoesEnviadas().contains(amigoUsuario)) {
-            throw new UsuarioJaSolicitouAmizadeException();
-        } else if (usuario.getSolicitacoesRecebidas().contains(amigoUsuario)) {
-            usuario.aceitarSolicitacao(amigoUsuario);
-        } else {
-            usuario.enviarSolicitacao(amigoUsuario);
-        }
+        usuario.adicionarAmigo(amigoUsuario);
     }
 
     /**
@@ -286,10 +137,6 @@ public class Facade {
     public boolean ehAmigo(String login, String amigo) throws UsuarioNaoCadastradoException {
         Usuario usuario = this.sistema.getUsuario(login);
         Usuario amigoUsuario = this.sistema.getUsuario(amigo);
-
-        if (usuario == null || amigoUsuario == null) {
-            throw new UsuarioNaoCadastradoException();
-        }
 
         return usuario.getAmigos().contains(amigoUsuario);
     }
@@ -307,21 +154,7 @@ public class Facade {
     public String getAmigos(String login) throws UsuarioNaoCadastradoException {
         Usuario usuario = this.sistema.getUsuario(login);
 
-        if (usuario == null) {
-            throw new UsuarioNaoCadastradoException();
-        }
-
-        String amigos = "{";
-        for (int i = 0; i < usuario.getAmigos().size(); i++) {
-            Usuario amigo = usuario.getAmigos().get(i);
-            amigos += amigo.getLogin();
-            if (i < usuario.getAmigos().size() - 1) {
-                amigos += ",";
-            }
-        }
-
-        amigos += "}";
-        return amigos;
+        return usuario.getAmigosString();
     }
 
     /**
@@ -341,14 +174,6 @@ public class Facade {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
         Usuario destinatarioUsuario = this.sistema.getUsuario(destinatario);
 
-        if (usuario == null || destinatarioUsuario == null) {
-            throw new UsuarioNaoCadastradoException();
-        }
-
-        if (usuario.getLogin().equals(destinatarioUsuario.getLogin())) {
-            throw new UsuarioAutoEnvioRecadoException();
-        }
-
         usuario.enviarRecado(destinatarioUsuario, recado);
     }
 
@@ -366,16 +191,7 @@ public class Facade {
     public String lerRecado(String id) throws UsuarioNaoCadastradoException, NaoHaRecadosExcpetion {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
 
-        if (usuario == null) {
-            throw new UsuarioNaoCadastradoException();
-        }
-
         Recado recado = usuario.getRecado();
-
-        if (recado == null) {
-            throw new NaoHaRecadosExcpetion();
-        }
-
         return recado.getRecado();
     }
 
@@ -390,67 +206,6 @@ public class Facade {
      */
 
     public void encerrarSistema() throws AtributoNaoPreenchidoException {
-        try {
-            String caminho = "./database";
-
-            File diretorio = new File(caminho);
-
-            if (!diretorio.exists()) {
-                diretorio.mkdir();
-            }
-
-            File arquivoUsuarios = new File("./database/usuarios.txt");
-            arquivoUsuarios.createNewFile();
-
-            FileWriter fw = new FileWriter(arquivoUsuarios);
-            BufferedWriter bw = new BufferedWriter(fw);
-
-            for (Usuario usuario : this.sistema.getUsuarios().values()) {
-                bw.write(usuario.getLogin() + ";" + usuario.getSenha() + ";" + usuario.getNome());
-                for (String atributo : usuario.getPerfil().getAtributos().keySet()) {
-                    bw.write(";" + atributo + ":" + usuario.getPerfil().getAtributo(atributo));
-                }
-                bw.newLine();
-            }
-
-            bw.flush();
-            bw.close();
-            fw.close();
-
-            File arquivoAmigos = new File("./database/amigos.txt");
-            arquivoAmigos.createNewFile();
-
-            FileWriter fw2 = new FileWriter(arquivoAmigos);
-            BufferedWriter bw2 = new BufferedWriter(fw2);
-
-            for (Usuario usuario : this.sistema.getUsuarios().values()) {
-                String amigos = this.getAmigos(usuario.getLogin());
-                bw2.write(usuario.getLogin() + ";" + amigos);
-                bw2.newLine();
-            }
-
-            bw2.flush();
-            bw2.close();
-            fw2.close();
-
-            File arquivoRecados = new File("./database/recados.txt");
-            arquivoRecados.createNewFile();
-
-            FileWriter fw3 = new FileWriter(arquivoRecados);
-            BufferedWriter bw3 = new BufferedWriter(fw3);
-
-            for (Usuario usuario : this.sistema.getUsuarios().values()) {
-                for (Recado recado : usuario.getRecados()) {
-                    bw3.write(usuario.getLogin() + ";" + recado.getRemetente().getLogin() + ";" + recado.getRecado());
-                    bw3.newLine();
-                }
-            }
-
-            bw3.flush();
-            bw3.close();
-            fw3.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.sistema.encerrarSistema();
     }
 }
