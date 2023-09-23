@@ -1,8 +1,9 @@
-package br.ufal.ic.p2.jackut;
+package br.ufal.ic.p2.jackut.models;
 
 import java.util.HashMap;
 import java.util.Map;
-import br.ufal.ic.p2.jackut.Exceptions.AtributoNaoPreenchidoException;
+
+import br.ufal.ic.p2.jackut.Exceptions.Perfil.*;
 
 /**
  * <p> Classe que representa um perfil de usuário. </p>

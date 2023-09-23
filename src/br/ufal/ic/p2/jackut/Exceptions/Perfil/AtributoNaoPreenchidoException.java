@@ -1,4 +1,4 @@
-package br.ufal.ic.p2.jackut.Exceptions;
+package br.ufal.ic.p2.jackut.Exceptions.Perfil;
 
 /**
  * <p> Exceção que indica que um atributo não foi preenchido. </p>

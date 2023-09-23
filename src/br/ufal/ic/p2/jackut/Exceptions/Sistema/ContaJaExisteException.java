@@ -1,4 +1,4 @@
-package br.ufal.ic.p2.jackut.Exceptions;
+package br.ufal.ic.p2.jackut.Exceptions.Sistema;
 
 /**
  * <p> Exceção que indica que a conta já existe. </p>

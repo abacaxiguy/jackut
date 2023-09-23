@@ -1,16 +1,16 @@
-package br.ufal.ic.p2.jackut;
+package br.ufal.ic.p2.jackut.models;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import br.ufal.ic.p2.jackut.Exceptions.AtributoNaoPreenchidoException;
-import br.ufal.ic.p2.jackut.Exceptions.LoginSenhaInvalidosException;
-import br.ufal.ic.p2.jackut.Exceptions.NaoHaRecadosExcpetion;
-import br.ufal.ic.p2.jackut.Exceptions.UsuarioAutoAdicaoAmigoException;
-import br.ufal.ic.p2.jackut.Exceptions.UsuarioAutoEnvioRecadoException;
-import br.ufal.ic.p2.jackut.Exceptions.UsuarioJaAmigoException;
-import br.ufal.ic.p2.jackut.Exceptions.UsuarioJaSolicitouAmizadeException;
+import br.ufal.ic.p2.jackut.Exceptions.Comunidade.NaoHaMensagensException;
+import br.ufal.ic.p2.jackut.Exceptions.Perfil.AtributoNaoPreenchidoException;
+import br.ufal.ic.p2.jackut.Exceptions.Recado.NaoHaRecadosExcpetion;
+import br.ufal.ic.p2.jackut.Exceptions.Recado.UsuarioAutoEnvioRecadoException;
+import br.ufal.ic.p2.jackut.Exceptions.Sistema.LoginSenhaInvalidosException;
+import br.ufal.ic.p2.jackut.Exceptions.Usuario.*;
+import br.ufal.ic.p2.jackut.utils.UtilsString;
 
 /**
  * <p> Classe que representa um usuário. </p>
@@ -20,11 +20,26 @@ public class Usuario {
     private final String login;
     private final String senha;
     private final String nome;
-    private final Perfil perfil;
-    private final ArrayList<Usuario> amigos;
-    private final ArrayList<Usuario> solicitacoesEnviadas;
-    private final ArrayList<Usuario> solicitacoesRecebidas;
-    private final Queue<Recado> recados;
+
+    private final Perfil perfil = new Perfil();
+
+    private final ArrayList<Usuario> amigos = new ArrayList<>();
+    private final ArrayList<Usuario> solicitacoesEnviadas = new ArrayList<>();
+    private final ArrayList<Usuario> solicitacoesRecebidas = new ArrayList<>();
+
+    private final Queue<Recado> recados = new LinkedList<>();
+
+    private final ArrayList<Comunidade> comunidadesProprietarias = new ArrayList<>();
+    private final ArrayList<Comunidade> comunidadesParticipantes = new ArrayList<>();
+    private final Queue<Mensagem> mensagens = new LinkedList<>();
+
+    private final ArrayList<Usuario> idolos = new ArrayList<>();
+    private final ArrayList<Usuario> fas = new ArrayList<>();
+
+    private final ArrayList<Usuario> paqueras = new ArrayList<>();
+    private final ArrayList<Usuario> paquerasRecebidas = new ArrayList<>();
+
+    private final ArrayList<Usuario> inimigos = new ArrayList<>();
 
     /**
      * <p> Constrói um novo {@code Usuario} do Jackut. </p>
@@ -51,11 +66,6 @@ public class Usuario {
         this.login = login;
         this.senha = senha;
         this.nome = nome;
-        this.perfil = new Perfil();
-        this.amigos = new ArrayList<>();
-        this.solicitacoesEnviadas = new ArrayList<>();
-        this.solicitacoesRecebidas = new ArrayList<>();
-        this.recados = new LinkedList<>();
     }
 
     /**
@@ -66,6 +76,10 @@ public class Usuario {
 
     public String getLogin() {
         return this.login;
+    }
+
+    public String toString() {
+        return this.getLogin();
     }
 
     /**
@@ -110,7 +124,6 @@ public class Usuario {
     public Perfil getPerfil() {
         return this.perfil;
     }
-
 
     /**
      * <p> Retorna o valor de um atributo do usuário. </p>
@@ -165,33 +178,6 @@ public class Usuario {
     }
 
     /**
-     * <p> Adiciona um amigo ao usuário, caso ele não seja amigo, já tenha solicitado amizade ou já tenha recebido uma solicitação de amizade do usuário. </p>
-     *
-     * @param amigo  Login do amigo a ser adicionado
-     *
-     * @throws UsuarioJaAmigoException             Exceção lançada caso o usuário já seja amigo do usuário aberto na sessão
-     * @throws UsuarioAutoAdicaoAmigoException     Exceção lançada caso o usuário tente adicionar a si mesmo como amigo
-     * @throws UsuarioJaSolicitouAmizadeException  Exceção lançada caso o usuário já tenha solicitado amizade ao amigo
-     */
-    public void adicionarAmigo(Usuario amigo) throws UsuarioJaAmigoException, UsuarioAutoAdicaoAmigoException, UsuarioJaSolicitouAmizadeException {
-        if (this.getLogin().equals(amigo.getLogin())) {
-            throw new UsuarioAutoAdicaoAmigoException();
-        }
-
-        if (this.getAmigos().contains(amigo) || amigo.getAmigos().contains(this)) {
-            throw new UsuarioJaAmigoException();
-        }
-
-        if (this.getSolicitacoesEnviadas().contains(amigo)) {
-            throw new UsuarioJaSolicitouAmizadeException();
-        } else if (this.getSolicitacoesRecebidas().contains(amigo)) {
-            this.aceitarSolicitacao(amigo);
-        } else {
-            this.enviarSolicitacao(amigo);
-        }
-    }
-
-    /**
      * <p> Retorna a lista de amigos do usuário especificado. </p>
      * <p> O retorno é formatado como uma String no formato: <b>{amigo1,amigo2,amigo3,...}</b> </p>
      *
@@ -199,17 +185,7 @@ public class Usuario {
      */
 
     public String getAmigosString() {
-        String amigos = "{";
-        for (int i = 0; i < this.amigos.size(); i++) {
-            Usuario amigo = this.amigos.get(i);
-            amigos += amigo.getLogin();
-            if (i < this.amigos.size() - 1) {
-                amigos += ",";
-            }
-        }
-
-        amigos += "}";
-        return amigos;
+        return UtilsString.formatArrayList(this.amigos);
     }
 
     /**
@@ -233,24 +209,6 @@ public class Usuario {
     }
 
     /**
-     * <p> Envia um recado para o usuário passado como parâmetro. </p>
-     *
-     * @param destinatario  Usuário para o qual o recado será enviado.
-     * @param recado        Recado a ser enviado.
-     *
-     * @throws UsuarioAutoEnvioRecadoException Exceção lançada caso o usuário tente enviar um recado para si mesmo.
-     */
-
-    public void enviarRecado(Usuario destinatario, String recado) throws UsuarioAutoEnvioRecadoException {
-        if (this.getLogin().equals(destinatario.getLogin())) {
-            throw new UsuarioAutoEnvioRecadoException();
-        }
-
-        Recado r = new Recado(this, destinatario, recado);
-        destinatario.recados.add(r);
-    }
-
-    /**
      * <p> Retorna o recado mais antigo do usuário. </p>
      *
      * @return Recado mais antigo do usuário.
@@ -264,6 +222,10 @@ public class Usuario {
         }
 
         return this.recados.poll();
+    }
+
+    public void receberRecado(Recado recado) {
+        this.recados.add(recado);
     }
 
     /**
@@ -289,5 +251,153 @@ public class Usuario {
 
     public Queue<Recado> getRecados() {
         return this.recados;
+    }
+
+    public void setCriadorComunidade(Comunidade comunidade) {
+        this.comunidadesProprietarias.add(comunidade);
+    }
+
+    public void setParticipanteComunidade(Comunidade comunidade) {
+        this.comunidadesParticipantes.add(comunidade);
+    }
+
+    /**
+     * <p> Retorna a lista de comunidades das quais o usuário é criador. </p>
+     *
+     * @return Lista de comunidades das quais o usuário é criador.
+     *
+     * @see Comunidade
+     */
+    public ArrayList<Comunidade> getComunidadesProprietarias() {
+        return this.comunidadesProprietarias;
+    }
+
+    /**
+     * <p> Retorna a lista de comunidades das quais o usuário é participante. </p>
+     *
+     * @return Lista de comunidades das quais o usuário é participante.
+     *
+     * @see Comunidade
+     */
+    public ArrayList<Comunidade> getComunidadesParticipantes() {
+        return this.comunidadesParticipantes;
+    }
+
+    /**
+     * <p> Recebe uma mensagem de uma comunidade. </p>
+     *
+     * @param mensagem Mensagem a ser recebida.
+     */
+
+    public void receberMensagem(Mensagem mensagem) {
+        this.mensagens.add(mensagem);
+    }
+
+    /**
+     * <p> Le uma mensagem da fila de mensagens do usuário. </p>
+     *
+     * @return Mensagem lida.
+     *
+     * @throws NaoHaMensagensException Exceção lançada caso o usuário não tenha mensagens na fila.
+     */
+
+    public String lerMensagem() throws NaoHaMensagensException {
+        if (this.mensagens.isEmpty()) {
+            throw new NaoHaMensagensException();
+        }
+
+        return this.mensagens.poll().getMensagem();
+    }
+
+    public Queue<Mensagem> getMensagens() {
+        return this.mensagens;
+    }
+
+    public void setIdolo(Usuario usuario) {
+        this.idolos.add(usuario);
+    }
+
+    public void setFa(Usuario usuario) {
+        this.fas.add(usuario);
+    }
+
+    public ArrayList<Usuario> getIdolos() {
+        return this.idolos;
+    }
+
+    public ArrayList<Usuario> getFas() {
+        return this.fas;
+    }
+
+    public String getFasString() {
+        return UtilsString.formatArrayList(this.fas);
+    }
+
+    public void setPaquera(Usuario usuario) {
+        this.paqueras.add(usuario);
+    }
+
+    public void setPaquerasRecebidas(Usuario usuario) {
+        this.paquerasRecebidas.add(usuario);
+    }
+
+    public ArrayList<Usuario> getPaqueras() {
+        return this.paqueras;
+    }
+
+    public ArrayList<Usuario> getPaquerasRecebidas() {
+        return this.paquerasRecebidas;
+    }
+
+    public String getPaquerasString() {
+        return UtilsString.formatArrayList(this.paqueras);
+    }
+
+    public void setInimigo(Usuario usuario) {
+        this.inimigos.add(usuario);
+    }
+
+    public ArrayList<Usuario> getInimigos() {
+        return this.inimigos;
+    }
+
+    public void removerAmigo(Usuario usuario) {
+        this.amigos.remove(usuario);
+    }
+
+    public void removerSolicitacaoEnviada(Usuario usuario) {
+        this.solicitacoesEnviadas.remove(usuario);
+    }
+
+    public void removerSolicitacaoRecebida(Usuario usuario) {
+        this.solicitacoesRecebidas.remove(usuario);
+    }
+
+    public void removerFa(Usuario usuario) {
+        this.fas.remove(usuario);
+    }
+
+    public void removerPaquera(Usuario usuario) {
+        this.paqueras.remove(usuario);
+    }
+
+    public void removerPaqueraRecebida(Usuario usuario) {
+        this.paquerasRecebidas.remove(usuario);
+    }
+
+    public void removerInimigo(Usuario usuario) {
+        this.inimigos.remove(usuario);
+    }
+
+    public void removerIdolo(Usuario usuario) {
+        this.idolos.remove(usuario);
+    }
+
+    public void removerComunidade(Comunidade comunidade) {
+        this.comunidadesParticipantes.remove(comunidade);
+    }
+
+    public void removerRecado(Recado recado) {
+        this.recados.remove(recado);
     }
 }

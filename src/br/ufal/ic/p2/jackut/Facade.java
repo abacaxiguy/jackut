@@ -1,26 +1,18 @@
 package br.ufal.ic.p2.jackut;
 
-import br.ufal.ic.p2.jackut.Exceptions.*;
+import br.ufal.ic.p2.jackut.models.*;
+import br.ufal.ic.p2.jackut.Exceptions.Usuario.*;
+import br.ufal.ic.p2.jackut.Exceptions.Sistema.*;
+import br.ufal.ic.p2.jackut.Exceptions.Recado.*;
+import br.ufal.ic.p2.jackut.Exceptions.Perfil.*;
+import br.ufal.ic.p2.jackut.Exceptions.Comunidade.*;
 
 /**
  * <p> Classe fachada que implementa a interface do sistema Jackut. </p>
  */
 
 public class Facade {
-    private final Sistema sistema;
-
-    /**
-     * <p> Constrói um novo {@code Facade} e inicializa uma instância do {@link Sistema}. </p>
-     * 
-     * <p> Os dados do usuário são carregados de um arquivo caso o arquivo exista. </p>
-     * <p> Os dados carregados incluem informações do usuário, como: atributos, amigos e recados. </p>
-     *
-     * @see Sistema
-     */
-
-    public Facade() {
-        this.sistema = new Sistema();
-    }
+    private final Sistema sistema = new Sistema();
 
     /**
      * <p> Apaga todos os dados mantidos no sistema. </p>
@@ -110,18 +102,18 @@ public class Facade {
      * @param id     ID da sessão
      * @param amigo  Login do amigo a ser adicionado
      *
-     * @throws UsuarioJaAmigoException             Exceção lançada caso o usuário já seja amigo do usuário aberto na sessão
+     * @throws UsuarioJaTemRelacaoException        Exceção lançada caso o usuário já seja amigo do usuário aberto na sessão
      * @throws UsuarioNaoCadastradoException       Exceção lançada caso o usuário ou o amigo não estejam cadastrados
-     * @throws UsuarioAutoAdicaoAmigoException     Exceção lançada caso o usuário tente adicionar a si mesmo como amigo
+     * @throws UsuarioAutoRelacaoException         Exceção lançada caso o usuário tente adicionar a si mesmo como amigo
      * @throws UsuarioJaSolicitouAmizadeException  Exceção lançada caso o usuário já tenha solicitado amizade ao amigo
      */
 
-    public void adicionarAmigo(String id, String amigo) throws UsuarioJaAmigoException, UsuarioNaoCadastradoException,
-            UsuarioAutoAdicaoAmigoException, UsuarioJaSolicitouAmizadeException {
+    public void adicionarAmigo(String id, String amigo) throws UsuarioJaTemRelacaoException, UsuarioNaoCadastradoException,
+            UsuarioAutoRelacaoException, UsuarioJaSolicitouAmizadeException, UsuarioEhInimigoException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
         Usuario amigoUsuario = this.sistema.getUsuario(amigo);
 
-        usuario.adicionarAmigo(amigoUsuario);
+        this.sistema.adicionarAmigo(usuario, amigoUsuario);
     }
 
     /**
@@ -170,11 +162,11 @@ public class Facade {
      * @throws UsuarioAutoEnvioRecadoException  Exceção lançada caso o usuário tente enviar um recado para si mesmo
      */
 
-    public void enviarRecado(String id, String destinatario, String recado) throws UsuarioNaoCadastradoException, UsuarioAutoEnvioRecadoException {
+    public void enviarRecado(String id, String destinatario, String recado) throws UsuarioNaoCadastradoException, UsuarioAutoEnvioRecadoException, UsuarioEhInimigoException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
         Usuario destinatarioUsuario = this.sistema.getUsuario(destinatario);
 
-        usuario.enviarRecado(destinatarioUsuario, recado);
+        this.sistema.enviarRecado(usuario, destinatarioUsuario, recado);
     }
 
     /**
@@ -193,6 +185,119 @@ public class Facade {
 
         Recado recado = usuario.getRecado();
         return recado.getRecado();
+    }
+
+    /**
+     * <p> Cria uma comunidade com os dados fornecidos. </p>
+     *
+     * @param id         ID da sessão
+     * @param nome       Nome da comunidade
+     * @param descricao  Descrição da comunidade
+     *
+     * @throws UsuarioNaoCadastradoException  Exceção lançada caso o usuário não esteja cadastrado
+     * @throws ComunidadeJaExisteException    Exceção lançada caso a comunidade já exista
+     */
+
+    public void criarComunidade(String id, String nome, String descricao)
+            throws UsuarioNaoCadastradoException, ComunidadeJaExisteException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+
+        sistema.criarComunidade(usuario, nome, descricao);
+    }
+
+    public String getDescricaoComunidade(String nome) throws ComunidadeNaoExisteException {
+        return this.sistema.getDescricaoComunidade(nome);
+    }
+
+    public String getDonoComunidade(String nome) throws ComunidadeNaoExisteException {
+        return this.sistema.getDonoComunidade(nome);
+    }
+
+    public String getMembrosComunidade(String nome) throws ComunidadeNaoExisteException {
+        return this.sistema.getMembrosComunidade(nome);
+    }
+
+    public String getComunidades(String login) throws UsuarioNaoCadastradoException {
+        Usuario usuario = this.sistema.getUsuario(login);
+
+        return this.sistema.getComunidades(usuario);
+    }
+
+    public void adicionarComunidade(String id, String nome)
+            throws UsuarioNaoCadastradoException, ComunidadeNaoExisteException, UsuarioJaEstaNaComunidadeException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+
+        this.sistema.adicionarComunidade(usuario, nome);
+    }
+    
+    public String lerMensagem(String id) throws UsuarioNaoCadastradoException, NaoHaMensagensException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+
+        return this.sistema.lerMensagem(usuario);
+    }
+
+    public void enviarMensagem(String id, String comunidade, String mensagem)
+            throws UsuarioNaoCadastradoException, ComunidadeNaoExisteException {
+        this.sistema.getSessaoUsuario(id);
+        Comunidade comunidadeAlvo = this.sistema.getComunidade(comunidade);
+
+        this.sistema.enviarMensagem(comunidadeAlvo, mensagem);
+    }
+
+    public boolean ehFa(String login, String idolo) {
+        Usuario usuario = this.sistema.getUsuario(login);
+        Usuario idoloUsuario = this.sistema.getUsuario(idolo);
+
+        return idoloUsuario.getFas().contains(usuario);
+    }
+
+    public void adicionarIdolo (String id, String idolo)
+            throws UsuarioNaoCadastradoException, UsuarioJaTemRelacaoException, UsuarioAutoRelacaoException, UsuarioEhInimigoException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+        Usuario idoloUsuario = this.sistema.getUsuario(idolo);
+
+        this.sistema.adicionarIdolo(usuario, idoloUsuario);
+    }
+
+    public String getFas(String login) throws UsuarioNaoCadastradoException {
+        Usuario usuario = this.sistema.getUsuario(login);
+
+        return this.sistema.getFas(usuario);
+    }
+
+    public boolean ehPaquera(String id, String paquera) throws UsuarioNaoCadastradoException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+        Usuario paqueraUsuario = this.sistema.getUsuario(paquera);
+
+        return usuario.getPaqueras().contains(paqueraUsuario);
+    }
+
+    public void adicionarPaquera (String id, String paquera)
+            throws UsuarioNaoCadastradoException, UsuarioJaTemRelacaoException, UsuarioAutoRelacaoException, UsuarioEhInimigoException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+        Usuario paqueraUsuario = this.sistema.getUsuario(paquera);
+
+        this.sistema.adicionarPaquera(usuario, paqueraUsuario);
+    }
+
+    public String getPaqueras(String id) throws UsuarioNaoCadastradoException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+
+        return this.sistema.getPaqueras(usuario);
+    }
+
+    public void adicionarInimigo(String id, String inimigo)
+            throws UsuarioNaoCadastradoException, UsuarioJaTemRelacaoException, UsuarioAutoRelacaoException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+        Usuario inimigoUsuario = this.sistema.getUsuario(inimigo);
+
+        this.sistema.adicionarInimigo(usuario, inimigoUsuario);
+    }
+
+    public void removerUsuario(String id) throws UsuarioNaoCadastradoException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+
+        this.sistema.removerUsuario(usuario, id);
     }
 
     /**
