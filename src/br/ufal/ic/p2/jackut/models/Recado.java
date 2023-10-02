@@ -1,5 +1,6 @@
 package br.ufal.ic.p2.jackut.models;
 
+
 /**
  * <p> Classe que representa um recado. </p>
  */

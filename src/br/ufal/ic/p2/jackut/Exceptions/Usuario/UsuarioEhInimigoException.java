@@ -1,5 +1,10 @@
 package br.ufal.ic.p2.jackut.Exceptions.Usuario;
 
+
+/**
+ * <p> Exceção para quando o usuário é inimigo do usuário logado. </p>
+ */
+
 public class UsuarioEhInimigoException extends Exception {
 
     /**

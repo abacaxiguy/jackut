@@ -1,5 +1,6 @@
 package br.ufal.ic.p2.jackut.Exceptions.Usuario;
 
+
 /**
  * <p> Exceção que indica que o usuário não está cadastrado no sistema. </p>
  */

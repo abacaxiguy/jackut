@@ -1,5 +1,6 @@
 package br.ufal.ic.p2.jackut.Exceptions.Comunidade;
 
+
 /**
  * <p> Excecao para quando nao ha mensagens em uma comunidade. </p>
  */

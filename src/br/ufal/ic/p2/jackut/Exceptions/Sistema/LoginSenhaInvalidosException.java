@@ -1,5 +1,6 @@
 package br.ufal.ic.p2.jackut.Exceptions.Sistema;
 
+
 /**
  * <p> Exceção que indica que o login ou senha informados são inválidos. </p>
  */
@@ -18,5 +19,4 @@ public class LoginSenhaInvalidosException extends RuntimeException {
     public LoginSenhaInvalidosException(String type) {
         super(type.equals("login") ? "Login inválido." : type.equals("senha") ? "Senha inválida." : "Login ou senha inválidos.");
     }
-    
 }

@@ -1,11 +1,15 @@
 package br.ufal.ic.p2.jackut;
 
 import br.ufal.ic.p2.jackut.models.*;
+
 import br.ufal.ic.p2.jackut.Exceptions.Usuario.*;
 import br.ufal.ic.p2.jackut.Exceptions.Sistema.*;
 import br.ufal.ic.p2.jackut.Exceptions.Recado.*;
 import br.ufal.ic.p2.jackut.Exceptions.Perfil.*;
 import br.ufal.ic.p2.jackut.Exceptions.Comunidade.*;
+
+import br.ufal.ic.p2.jackut.utils.*;
+
 
 /**
  * <p> Classe fachada que implementa a interface do sistema Jackut. </p>
@@ -135,12 +139,13 @@ public class Facade {
 
     /**
      * <p> Retorna a lista de amigos do usuário especificado. </p>
-     * <p> O retorno é formatado como uma String no formato: <b>{amigo1,amigo2,amigo3,...}</b> </p>
      *
      * @param login  Login do usuário
      * @return       Lista de amigos do usuário formatada em uma String
      *
      * @throws UsuarioNaoCadastradoException Exceção lançada caso o usuário não esteja cadastrado
+     *
+     * @see UtilsString
      */
 
     public String getAmigos(String login) throws UsuarioNaoCadastradoException {
@@ -177,14 +182,13 @@ public class Facade {
      * @return    Primeiro recado da fila de recados do usuário
      *
      * @throws UsuarioNaoCadastradoException  Exceção lançada caso o usuário não esteja cadastrado
-     * @throws NaoHaRecadosExcpetion          Exceção lançada caso o usuário não tenha recados na fila
+     * @throws NaoHaRecadosException          Exceção lançada caso o usuário não tenha recados na fila
      */
 
-    public String lerRecado(String id) throws UsuarioNaoCadastradoException, NaoHaRecadosExcpetion {
+    public String lerRecado(String id) throws UsuarioNaoCadastradoException, NaoHaRecadosException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
 
-        Recado recado = usuario.getRecado();
-        return recado.getRecado();
+        return this.sistema.lerRecado(usuario);
     }
 
     /**
@@ -205,17 +209,57 @@ public class Facade {
         sistema.criarComunidade(usuario, nome, descricao);
     }
 
+    /**
+     * <p> Retorna a descrição da comunidade especificada. </p>
+     *
+     * @param nome  Nome da comunidade
+     * @return      Descrição da comunidade
+     *
+     * @throws ComunidadeNaoExisteException Exceção lançada caso a comunidade não exista
+     */
+
     public String getDescricaoComunidade(String nome) throws ComunidadeNaoExisteException {
         return this.sistema.getDescricaoComunidade(nome);
     }
+
+    /**
+     * <p> Retorna o dono da comunidade especificada. </p>
+     *
+     * @param nome  Nome da comunidade
+     * @return      Dono da comunidade
+     *
+     * @throws ComunidadeNaoExisteException Exceção lançada caso a comunidade não exista
+     */
 
     public String getDonoComunidade(String nome) throws ComunidadeNaoExisteException {
         return this.sistema.getDonoComunidade(nome);
     }
 
+    /**
+     * <p> Retorna a lista de membros da comunidade especificada. </p>
+     *
+     * @param nome  Nome da comunidade
+     * @return      Lista de membros da comunidade formatada em uma String
+     *
+     * @throws ComunidadeNaoExisteException Exceção lançada caso a comunidade não exista
+     *
+     * @see UtilsString
+     */
+
     public String getMembrosComunidade(String nome) throws ComunidadeNaoExisteException {
         return this.sistema.getMembrosComunidade(nome);
     }
+
+    /**
+     * <p> Retorna a lista de comunidades do usuário especificado. </p>
+     *
+     * @param login  Login do usuário
+     * @return       Lista de comunidades do usuário formatada em uma String
+     *
+     * @throws UsuarioNaoCadastradoException Exceção lançada caso o usuário não esteja cadastrado
+     *
+     * @see UtilsString
+     */
 
     public String getComunidades(String login) throws UsuarioNaoCadastradoException {
         Usuario usuario = this.sistema.getUsuario(login);
@@ -223,18 +267,50 @@ public class Facade {
         return this.sistema.getComunidades(usuario);
     }
 
+    /**
+     * <p> Adiciona o usuário com a sessão aberta identificada por id à comunidade especificada. </p>
+     *
+     * @param id    ID da sessão
+     * @param nome  Nome da comunidade
+     *
+     * @throws UsuarioNaoCadastradoException       Exceção lançada caso o usuário não esteja cadastrado
+     * @throws ComunidadeNaoExisteException        Exceção lançada caso a comunidade não exista
+     * @throws UsuarioJaEstaNaComunidadeException  Exceção lançada caso o usuário já esteja na comunidade
+     */
+
     public void adicionarComunidade(String id, String nome)
             throws UsuarioNaoCadastradoException, ComunidadeNaoExisteException, UsuarioJaEstaNaComunidadeException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
 
         this.sistema.adicionarComunidade(usuario, nome);
     }
-    
+
+    /**
+     * <p> Lê a primeira mensagem da fila de mensagens do usuário com a sessão aberta. </p>
+     *
+     * @param id  ID da sessão
+     * @return    Primeira mensagem da fila de mensagens do usuário
+     *
+     * @throws UsuarioNaoCadastradoException  Exceção lançada caso o usuário não esteja cadastrado
+     * @throws NaoHaMensagensException        Exceção lançada caso o usuário não tenha mensagens na fila
+     */
+
     public String lerMensagem(String id) throws UsuarioNaoCadastradoException, NaoHaMensagensException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
 
         return this.sistema.lerMensagem(usuario);
     }
+
+    /**
+     * <p> Envia uma mensagem de um usuário com sessão aberta à comunidade especificada. </p>
+     *
+     * @param id          ID da sessão
+     * @param comunidade  Nome da comunidade
+     * @param mensagem    Mensagem a ser enviada
+     *
+     * @throws UsuarioNaoCadastradoException  Exceção lançada caso o usuário não esteja cadastrado
+     * @throws ComunidadeNaoExisteException   Exceção lançada caso a comunidade não exista
+     */
 
     public void enviarMensagem(String id, String comunidade, String mensagem)
             throws UsuarioNaoCadastradoException, ComunidadeNaoExisteException {
@@ -244,20 +320,49 @@ public class Facade {
         this.sistema.enviarMensagem(comunidadeAlvo, mensagem);
     }
 
-    public boolean ehFa(String login, String idolo) {
+    /**
+     * <p> Retorna true se o usuário com a sessão aberta identificada por id é fã do usuário especificado. </p>
+     *
+     * @param login       Login do usuário
+     * @param loginIdolo  Login do ídolo
+     * @return            Booleano indicando se o usuário é fã do ídolo
+     */
+    public boolean ehFa(String login, String loginIdolo) {
         Usuario usuario = this.sistema.getUsuario(login);
-        Usuario idoloUsuario = this.sistema.getUsuario(idolo);
+        Usuario idolo = this.sistema.getUsuario(loginIdolo);
 
-        return idoloUsuario.getFas().contains(usuario);
+        return idolo.getFas().contains(usuario);
     }
 
-    public void adicionarIdolo (String id, String idolo)
+    /**
+     * <p> Adiciona um ídolo ao usuário com a sessão aberta identificada por id. </p>
+     *
+     * @param id          ID da sessão
+     * @param loginIdolo  Login do ídolo
+     *
+     * @throws UsuarioNaoCadastradoException  Exceção lançada caso o usuário ou o ídolo não estejam cadastrados
+     * @throws UsuarioJaTemRelacaoException   Exceção lançada caso o usuário já seja ídolo do ídolo
+     * @throws UsuarioAutoRelacaoException    Exceção lançada caso o usuário tente adicionar a si mesmo como ídolo
+     */
+
+    public void adicionarIdolo (String id, String loginIdolo)
             throws UsuarioNaoCadastradoException, UsuarioJaTemRelacaoException, UsuarioAutoRelacaoException, UsuarioEhInimigoException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
-        Usuario idoloUsuario = this.sistema.getUsuario(idolo);
+        Usuario idolo = this.sistema.getUsuario(loginIdolo);
 
-        this.sistema.adicionarIdolo(usuario, idoloUsuario);
+        this.sistema.adicionarIdolo(usuario, idolo);
     }
+
+    /**
+     * <p> Retorna a lista de fãs do usuário com a sessão aberta identificada por id. </p>
+     *
+     * @param login  ID da sessão
+     * @return       Lista de ídolos do usuário formatada em uma {@code String}
+     *
+     * @throws UsuarioNaoCadastradoException Exceção lançada caso o usuário não esteja cadastrado
+     *
+     * @see UtilsString
+     */
 
     public String getFas(String login) throws UsuarioNaoCadastradoException {
         Usuario usuario = this.sistema.getUsuario(login);
@@ -265,20 +370,53 @@ public class Facade {
         return this.sistema.getFas(usuario);
     }
 
-    public boolean ehPaquera(String id, String paquera) throws UsuarioNaoCadastradoException {
-        Usuario usuario = this.sistema.getSessaoUsuario(id);
-        Usuario paqueraUsuario = this.sistema.getUsuario(paquera);
+    /**
+     * <p> Retorna true se o usuário com a sessão aberta identificada por id paquera o usuário especificado. </p>
+     *
+     * @param id            ID da sessão
+     * @param loginPaquera  Login do usuário paquerado
+     * @return         Booleano indicando se o usuário paquera o usuário especificado
+     *
+     * @throws UsuarioNaoCadastradoException Exceção lançada caso o usuário ou o paquera não estejam cadastrados
+     */
 
-        return usuario.getPaqueras().contains(paqueraUsuario);
+    public boolean ehPaquera(String id, String loginPaquera) throws UsuarioNaoCadastradoException {
+        Usuario usuario = this.sistema.getSessaoUsuario(id);
+        Usuario paquera = this.sistema.getUsuario(loginPaquera);
+
+        return usuario.getPaqueras().contains(paquera);
     }
 
-    public void adicionarPaquera (String id, String paquera)
+    /**
+     * <p> Adiciona um paquera ao usuário com a sessão aberta identificada por id. </p>
+     *
+     * @param id            ID da sessão
+     * @param loginPaquera  Login do usuário paquerado
+     *
+     * @throws UsuarioNaoCadastradoException  Exceção lançada caso o usuário ou o paquera não estejam cadastrados
+     * @throws UsuarioJaTemRelacaoException   Exceção lançada caso o usuário já seja paquera do paquera
+     * @throws UsuarioAutoRelacaoException    Exceção lançada caso o usuário tente adicionar a si mesmo como paquera
+     * @throws UsuarioEhInimigoException      Exceção lançada caso o usuário tente adicionar um inimigo como paquera
+     */
+
+    public void adicionarPaquera (String id, String loginPaquera)
             throws UsuarioNaoCadastradoException, UsuarioJaTemRelacaoException, UsuarioAutoRelacaoException, UsuarioEhInimigoException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
-        Usuario paqueraUsuario = this.sistema.getUsuario(paquera);
+        Usuario paquera = this.sistema.getUsuario(loginPaquera);
 
-        this.sistema.adicionarPaquera(usuario, paqueraUsuario);
+        this.sistema.adicionarPaquera(usuario, paquera);
     }
+
+    /**
+     * <p> Retorna a lista de paqueras do usuário com a sessão aberta identificada por id. </p>
+     *
+     * @param id  ID da sessão
+     * @return    Lista de paqueras do usuário formatada em uma {@code String}
+     *
+     * @throws UsuarioNaoCadastradoException Exceção lançada caso o usuário não esteja cadastrado
+     *
+     * @see UtilsString
+     */
 
     public String getPaqueras(String id) throws UsuarioNaoCadastradoException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
@@ -286,13 +424,32 @@ public class Facade {
         return this.sistema.getPaqueras(usuario);
     }
 
-    public void adicionarInimigo(String id, String inimigo)
+    /**
+     * <p> Adiciona um inimigo ao usuário com a sessão aberta identificada por id. </p>
+     *
+     * @param id            ID da sessão
+     * @param loginInimigo  Login do usuário inimigo
+     *
+     * @throws UsuarioNaoCadastradoException  Exceção lançada caso o usuário ou o inimigo não estejam cadastrados
+     * @throws UsuarioJaTemRelacaoException   Exceção lançada caso o usuário já seja inimigo do inimigo
+     * @throws UsuarioAutoRelacaoException    Exceção lançada caso o usuário tente adicionar a si mesmo como inimigo
+     */
+
+    public void adicionarInimigo(String id, String loginInimigo)
             throws UsuarioNaoCadastradoException, UsuarioJaTemRelacaoException, UsuarioAutoRelacaoException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);
-        Usuario inimigoUsuario = this.sistema.getUsuario(inimigo);
+        Usuario inimigo = this.sistema.getUsuario(loginInimigo);
 
-        this.sistema.adicionarInimigo(usuario, inimigoUsuario);
+        this.sistema.adicionarInimigo(usuario, inimigo);
     }
+
+    /**
+     * <p> Remove um usuário do sistema. </p>
+     *
+     * @param id ID da sessão
+     *
+     * @throws UsuarioNaoCadastradoException Exceção lançada caso o usuário não esteja cadastrado
+     */
 
     public void removerUsuario(String id) throws UsuarioNaoCadastradoException {
         Usuario usuario = this.sistema.getSessaoUsuario(id);

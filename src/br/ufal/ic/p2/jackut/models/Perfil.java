@@ -5,6 +5,7 @@ import java.util.Map;
 
 import br.ufal.ic.p2.jackut.Exceptions.Perfil.*;
 
+
 /**
  * <p> Classe que representa um perfil de usuário. </p>
  */

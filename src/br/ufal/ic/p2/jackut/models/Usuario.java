@@ -6,11 +6,11 @@ import java.util.Queue;
 
 import br.ufal.ic.p2.jackut.Exceptions.Comunidade.NaoHaMensagensException;
 import br.ufal.ic.p2.jackut.Exceptions.Perfil.AtributoNaoPreenchidoException;
-import br.ufal.ic.p2.jackut.Exceptions.Recado.NaoHaRecadosExcpetion;
-import br.ufal.ic.p2.jackut.Exceptions.Recado.UsuarioAutoEnvioRecadoException;
+import br.ufal.ic.p2.jackut.Exceptions.Recado.NaoHaRecadosException;
 import br.ufal.ic.p2.jackut.Exceptions.Sistema.LoginSenhaInvalidosException;
-import br.ufal.ic.p2.jackut.Exceptions.Usuario.*;
+
 import br.ufal.ic.p2.jackut.utils.UtilsString;
+
 
 /**
  * <p> Classe que representa um usuário. </p>
@@ -78,10 +78,6 @@ public class Usuario {
         return this.login;
     }
 
-    public String toString() {
-        return this.getLogin();
-    }
-
     /**
      * <p> Verifica se a senha passada como parâmetro é igual à senha do usuário. </p>
      *
@@ -145,6 +141,7 @@ public class Usuario {
 
     /**
      * <p> Envia uma solicitação de amizade para o usuário passado como parâmetro. </p>
+     * <p> Adiciona o usuário à lista de solicitações enviadas e adiciona o usuário atual à lista de solicitações recebidas do usuário passado como parâmetro. </p>
      *
      * @param usuario Usuário para o qual a solicitação será enviada.
      */
@@ -156,6 +153,7 @@ public class Usuario {
 
     /**
      * <p> Aceita uma solicitação de amizade. </p>
+     * <p> Adiciona o usuário à lista de amigos e remove o usuário da lista de solicitações recebidas. </p>
      *
      * @param usuario Usuário que enviou a solicitação.
      */
@@ -179,9 +177,10 @@ public class Usuario {
 
     /**
      * <p> Retorna a lista de amigos do usuário especificado. </p>
-     * <p> O retorno é formatado como uma String no formato: <b>{amigo1,amigo2,amigo3,...}</b> </p>
      *
      * @return Lista de amigos do usuário formatada em uma String
+     *
+     * @see UtilsString
      */
 
     public String getAmigosString() {
@@ -213,16 +212,22 @@ public class Usuario {
      *
      * @return Recado mais antigo do usuário.
      *
-     * @throws NaoHaRecadosExcpetion Exceção lançada caso o usuário não tenha recados na fila.
+     * @throws NaoHaRecadosException Exceção lançada caso o usuário não tenha recados na fila.
      */
 
-    public Recado getRecado() throws NaoHaRecadosExcpetion {
+    public Recado lerRecado() throws NaoHaRecadosException {
         if (this.recados.isEmpty()) {
-            throw new NaoHaRecadosExcpetion();
+            throw new NaoHaRecadosException();
         }
 
         return this.recados.poll();
     }
+
+    /**
+     * <p> Adiciona um recado à fila de recados do usuário. </p>
+     *
+     * @param recado Recado a ser adicionado.
+     */
 
     public void receberRecado(Recado recado) {
         this.recados.add(recado);
@@ -230,7 +235,7 @@ public class Usuario {
 
     /**
      * <p> Adiciona um amigo ao usuário. </p>
-     * <p> Método utilizado para carregar os dados do arquivo. Não deve ser utilizado para adicionar amigos. </p>
+     * <p><b>AVISO:</b> Método utilizado apenas para carregar os dados do arquivo. </p>
      *
      * @param amigo Amigo a ser adicionado.
      */
@@ -253,21 +258,42 @@ public class Usuario {
         return this.recados;
     }
 
-    public void setCriadorComunidade(Comunidade comunidade) {
+    /**
+     * <p> Adiciona uma comunidade à lista de comunidades em que o usuário é o dono. </p>
+     *
+     * @param comunidade Comunidade a ser adicionada.
+     */
+
+    public void setDonoComunidade(Comunidade comunidade) {
+        if (this.comunidadesProprietarias.contains(comunidade)) {
+            return;
+        }
+
         this.comunidadesProprietarias.add(comunidade);
     }
 
+    /**
+     * <p> Adiciona uma comunidade à lista de comunidades em que o usuário é participante. </p>
+     *
+     * @param comunidade Comunidade a ser adicionada.
+     */
+
     public void setParticipanteComunidade(Comunidade comunidade) {
+        if (this.comunidadesParticipantes.contains(comunidade)) {
+            return;
+        }
+
         this.comunidadesParticipantes.add(comunidade);
     }
 
     /**
-     * <p> Retorna a lista de comunidades das quais o usuário é criador. </p>
+     * <p> Retorna a lista de comunidades das quais o usuário é dono. </p>
      *
-     * @return Lista de comunidades das quais o usuário é criador.
+     * @return Lista de comunidades das quais o usuário é dono.
      *
      * @see Comunidade
      */
+
     public ArrayList<Comunidade> getComunidadesProprietarias() {
         return this.comunidadesProprietarias;
     }
@@ -279,6 +305,7 @@ public class Usuario {
      *
      * @see Comunidade
      */
+
     public ArrayList<Comunidade> getComunidadesParticipantes() {
         return this.comunidadesParticipantes;
     }
@@ -301,103 +328,259 @@ public class Usuario {
      * @throws NaoHaMensagensException Exceção lançada caso o usuário não tenha mensagens na fila.
      */
 
-    public String lerMensagem() throws NaoHaMensagensException {
+    public Mensagem lerMensagem() throws NaoHaMensagensException {
         if (this.mensagens.isEmpty()) {
             throw new NaoHaMensagensException();
         }
 
-        return this.mensagens.poll().getMensagem();
+        return this.mensagens.poll();
     }
+
+    /**
+     * <p> Retorna a fila de mensagens do usuário. </p>
+     *
+     * @return Fila de mensagens do usuário.
+     *
+     * @see Mensagem
+     */
 
     public Queue<Mensagem> getMensagens() {
         return this.mensagens;
     }
 
-    public void setIdolo(Usuario usuario) {
-        this.idolos.add(usuario);
+    /**
+     * <p> Adiciona um usuário à lista de ídolos do usuário. </p>
+     *
+     * @param idolo Ídolo a ser adicionado.
+     */
+
+    public void setIdolo(Usuario idolo) {
+        this.idolos.add(idolo);
     }
 
-    public void setFa(Usuario usuario) {
-        this.fas.add(usuario);
+    /**
+     * <p> Adiciona um usuário à lista de fãs do usuário. </p>
+     *
+     * @param fa Fã a ser adicionado.
+     */
+
+    public void setFa(Usuario fa) {
+        this.fas.add(fa);
     }
+
+    /**
+     * <p> Retorna a lista de ídolos do usuário. </p>
+     *
+     * @return Lista de ídolos do usuário.
+     */
 
     public ArrayList<Usuario> getIdolos() {
         return this.idolos;
     }
 
+    /**
+     * <p> Retorna a lista de fãs do usuário. </p>
+     *
+     * @return Lista de fãs do usuário.
+     */
+
     public ArrayList<Usuario> getFas() {
         return this.fas;
     }
+
+    /**
+     * <p> Retorna a lista de ídolos do usuário formatada como uma String. </p>
+     *
+     * @return Lista de ídolos do usuário formatada em uma String
+     *
+     * @see UtilsString
+     */
 
     public String getFasString() {
         return UtilsString.formatArrayList(this.fas);
     }
 
-    public void setPaquera(Usuario usuario) {
-        this.paqueras.add(usuario);
+    /**
+     * <p> Adiciona um usuário à lista de paqueras do usuário. </p>
+     *
+     * @param paquera Paquera a ser adicionado.
+     */
+
+    public void setPaquera(Usuario paquera) {
+        this.paqueras.add(paquera);
     }
+
+    /**
+     * <p> Adiciona um usuário à lista de paqueras recebidas do usuário. </p>
+     *
+     * @param usuario Usuário a ser adicionado.
+     */
 
     public void setPaquerasRecebidas(Usuario usuario) {
         this.paquerasRecebidas.add(usuario);
     }
 
+    /**
+     * <p> Retorna a lista de paqueras do usuário. </p>
+     *
+     * @return Lista de paqueras do usuário.
+     */
+
     public ArrayList<Usuario> getPaqueras() {
         return this.paqueras;
     }
+
+    /**
+     * <p> Retorna a lista de paqueras recebidas do usuário. </p>
+     *
+     * @return Lista de paqueras recebidas do usuário.
+     */
 
     public ArrayList<Usuario> getPaquerasRecebidas() {
         return this.paquerasRecebidas;
     }
 
+    /**
+     * <p> Retorna a lista de paqueras do usuário formatada como uma String. </p>
+     *
+     * @return Lista de paqueras do usuário formatada em uma String
+     *
+     * @see UtilsString
+     */
+
     public String getPaquerasString() {
         return UtilsString.formatArrayList(this.paqueras);
     }
 
-    public void setInimigo(Usuario usuario) {
-        this.inimigos.add(usuario);
+    /**
+     * <p> Adiciona um usuário à lista de inimigos do usuário. </p>
+     *
+     * @param inimigo Inimigo a ser adicionado.
+     */
+
+    public void setInimigo(Usuario inimigo) {
+        this.inimigos.add(inimigo);
     }
+
+    /**
+     * <p> Retorna a lista de inimigos do usuário. </p>
+     *
+     * @return Lista de inimigos do usuário.
+     */
 
     public ArrayList<Usuario> getInimigos() {
         return this.inimigos;
     }
 
+    /**
+     * <p> Remove uma comunidade da lista de comunidades em que o usuário participa. </p>
+     *
+     * @param comunidade Comunidade em que o usuário não participa mais.
+     */
+
+    public void sairComunidade(Comunidade comunidade) {
+        this.comunidadesParticipantes.remove(comunidade);
+    }
+
+    /**
+     * <p> Remove um recado da fila de recados do usuário. </p>
+     *
+     * @param recado Recado a ser removido.
+     */
+
+    public void removerRecado(Recado recado) {
+        this.recados.remove(recado);
+    }
+
+    /**
+     * <p> Remove um amigo da lista de amigos do usuário. </p>
+     *
+     * @param usuario Usuário que não é mais amigo.
+     */
+
     public void removerAmigo(Usuario usuario) {
         this.amigos.remove(usuario);
     }
 
-    public void removerSolicitacaoEnviada(Usuario usuario) {
-        this.solicitacoesEnviadas.remove(usuario);
-    }
-
-    public void removerSolicitacaoRecebida(Usuario usuario) {
-        this.solicitacoesRecebidas.remove(usuario);
-    }
+    /**
+     * <p> Remove um fã da lista de fãs do usuário. </p>
+     *
+     * @param usuario Usuário que não é mais ídolo.
+     */
 
     public void removerFa(Usuario usuario) {
         this.fas.remove(usuario);
     }
 
-    public void removerPaquera(Usuario usuario) {
-        this.paqueras.remove(usuario);
-    }
-
-    public void removerPaqueraRecebida(Usuario usuario) {
-        this.paquerasRecebidas.remove(usuario);
-    }
-
-    public void removerInimigo(Usuario usuario) {
-        this.inimigos.remove(usuario);
-    }
+    /**
+     * <p> Remove um ídolo da lista de ídolos do usuário. </p>
+     *
+     * @param usuario Usuário que não é mais ídolo.
+     */
 
     public void removerIdolo(Usuario usuario) {
         this.idolos.remove(usuario);
     }
 
-    public void removerComunidade(Comunidade comunidade) {
-        this.comunidadesParticipantes.remove(comunidade);
+    /**
+     * <p> Remove uma paquera da lista de paqueras do usuário. </p>
+     *
+     * @param usuario Usuário que não é mais paquera.
+     */
+
+    public void removerPaquera(Usuario usuario) {
+        this.paqueras.remove(usuario);
     }
 
-    public void removerRecado(Recado recado) {
-        this.recados.remove(recado);
+    /**
+     * <p> Remove uma paquera da lista de paqueras recebidas do usuário. </p>
+     *
+     * @param usuario Usuário que não é mais paquera.
+     */
+
+    public void removerPaqueraRecebida(Usuario usuario) {
+        this.paquerasRecebidas.remove(usuario);
+    }
+
+    /**
+     * <p> Remove um inimigo da lista de inimigos do usuário. </p>
+     *
+     * @param usuario Usuário que não é mais inimigo.
+     */
+
+    public void removerInimigo(Usuario usuario) {
+        this.inimigos.remove(usuario);
+    }
+
+    /**
+     * <p> Remove uma solicitação de amizade da lista de solicitações enviadas do usuário. </p>
+     *
+     * @param usuario Usuário que não receberá mais a solicitação.
+     */
+
+    public void removerSolicitacaoEnviada(Usuario usuario) {
+        this.solicitacoesEnviadas.remove(usuario);
+    }
+
+    /**
+     * <p> Remove uma solicitação de amizade da lista de solicitações recebidas do usuário. </p>
+     *
+     * @param usuario Usuário que não receberá mais a solicitação.
+     */
+
+    public void removerSolicitacaoRecebida(Usuario usuario) {
+        this.solicitacoesRecebidas.remove(usuario);
+    }
+
+    /**
+     * <p> Retorna uma {@code String} que representa o usuário. </p>
+     * <p> A representação segue o formato: {@code login} </p>
+     *
+     * @return String que representa o usuário.
+     */
+
+    @Override
+    public String toString() {
+        return this.getLogin();
     }
 }

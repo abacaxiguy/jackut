@@ -1,23 +1,22 @@
 package br.ufal.ic.p2.jackut;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import br.ufal.ic.p2.jackut.utils.*;
+
 import br.ufal.ic.p2.jackut.models.Comunidade;
 import br.ufal.ic.p2.jackut.models.Mensagem;
 import br.ufal.ic.p2.jackut.models.Recado;
 import br.ufal.ic.p2.jackut.models.Usuario;
+
 import br.ufal.ic.p2.jackut.Exceptions.Sistema.*;
 import br.ufal.ic.p2.jackut.Exceptions.Comunidade.*;
 import br.ufal.ic.p2.jackut.Exceptions.Usuario.*;
 import br.ufal.ic.p2.jackut.Exceptions.Perfil.*;
-import br.ufal.ic.p2.jackut.Exceptions.Recado.UsuarioAutoEnvioRecadoException;
+import br.ufal.ic.p2.jackut.Exceptions.Recado.*;
+
 
 /**
  * <p> Classe que representa o sistema. </p>
@@ -38,185 +37,9 @@ public class Sistema {
      */
 
     public Sistema() {
-        try {
-            UtilsFileHandler.criarPasta();
+        UtilsFileWriter.criarPasta();
 
-            Map<String, String[]> comunidades = new HashMap<>();
-
-            File arquivo = new File("./database/usuarios.txt");
-            if (arquivo.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-
-                    String login = dados[0];
-                    String senha = dados[1];
-                    String nome = "";
-                    if (dados.length > 2) {
-                        nome = dados[2];
-                    }
-
-                    Usuario usuario = new Usuario(login, senha, nome);
-                    for (int i = 3; i < dados.length - 1; i++) {
-                        String[] atributo = dados[i].split(":");
-                        usuario.getPerfil().setAtributo(atributo[0], atributo[1]);
-                    }
-
-                    String[] comunidadesUsuario = dados[dados.length - 1]
-                            .substring(1, dados[dados.length - 1].length() - 1)
-                            .split(",");
-
-                    comunidades.put(login, comunidadesUsuario);
-
-                    this.setUsuario(usuario);
-                }
-                br.close();
-            }
-
-            File arquivo2 = new File("./database/amigos.txt");
-            if (arquivo2.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo2));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-                    Usuario usuario = this.getUsuario(dados[0]);
-
-                    if (dados[1].length() <= 2) {
-                        continue;
-                    }
-
-                    String[] amigos = dados[1].substring(1, dados[1].length() - 1).split(",");
-
-                    for (String amigo : amigos) {
-                        usuario.setAmigo(this.getUsuario(amigo));
-                    }
-                }
-                br.close();
-            }
-
-            File arquivo3 = new File("./database/recados.txt");
-            if (arquivo3.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo3));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-                    Usuario usuario = this.getUsuario(dados[0]);
-                    Usuario amigo = this.getUsuario(dados[1]);
-                    String recado = dados[2];
-                    try {
-                        this.enviarRecado(amigo, usuario, recado);
-                    } catch (UsuarioEhInimigoException e) {
-                    }
-                }
-                br.close();
-            }
-
-            File arquivo4 = new File("./database/comunidades.txt");
-            if (arquivo4.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo4));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-                    Usuario dono = this.getUsuario(dados[0]);
-                    String nome = dados[1];
-                    String descricao = dados[2];
-
-                    Comunidade comunidade = new Comunidade(dono, nome, descricao);
-
-                    dono.setCriadorComunidade(comunidade);
-
-                    String[] membros = dados[3].substring(1, dados[3].length() - 1).split(",");
-
-                    for (String membro : membros) {
-                        if (membro.equals(dono.getLogin())) {
-                            continue;
-                        }
-                        comunidade.adicionarMembro(this.getUsuario(membro));
-                    }
-
-                    this.comunidades.put(nome, comunidade);
-                }
-
-                try {
-                    for (String login : comunidades.keySet()) {
-                        Usuario usuario = this.getUsuario(login);
-                        for (String comunidade : comunidades.get(login)) {
-                            usuario.setParticipanteComunidade(this.getComunidade(comunidade));
-                        }
-                    }
-                } catch (ComunidadeNaoExisteException e) {
-                }
-
-                br.close();
-            }
-
-            File arquivo5 = new File("./database/mensagens.txt");
-            if (arquivo5.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo5));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-                    Usuario usuario = this.getUsuario(dados[0]);
-                    String mensagem = dados[1];
-                    Mensagem msg = new Mensagem(mensagem);
-                    usuario.receberMensagem(msg);
-                }
-                br.close();
-            }
-
-            File arquivo6 = new File("./database/relacoes.txt");
-            if (arquivo6.exists()) {
-                String[] dados;
-                String linha;
-
-                BufferedReader br = new BufferedReader(new FileReader(arquivo6));
-
-                while ((linha = br.readLine()) != null) {
-                    dados = linha.split(";");
-                    Usuario usuario = this.getUsuario(dados[0]);
-                    Usuario amigo = this.getUsuario(dados[1]);
-                    String tipo = dados[2];
-
-                    switch (tipo) {
-                        case "idolo":
-                            usuario.setIdolo(amigo);
-                            break;
-                        case "fa":
-                            usuario.setFa(amigo);
-                            break;
-                        case "paquera":
-                            usuario.setPaquera(amigo);
-                            break;
-                        case "paqueraRecebida":
-                            usuario.setPaquerasRecebidas(amigo);
-                            break;
-                        case "inimigo":
-                            usuario.setInimigo(amigo);
-                            amigo.setInimigo(usuario);
-                            break;
-                    }
-                }
-                br.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        UtilsFileReader.lerArquivos(this);
     }
 
     /**
@@ -306,35 +129,15 @@ public class Sistema {
     }
 
     /**
-     * <p> Retorna todos os usuários do sistema. </p>
-     *
-     * @return Map com todos os usuários do sistema.
-     *
-     * @see Usuario
-     */
-
-    public Map<String, Usuario> getUsuarios() {
-        return this.usuarios;
-    }
-
-    /**
-     * <p>
-     * Adiciona um amigo ao usuário, caso ele não seja amigo, já tenha solicitado
-     * amizade ou já tenha recebido uma solicitação de amizade do usuário.
-     * </p>
+     * <p> Adiciona um amigo ao usuário </p>
+     * <p> O amigo não será adicionado caso ele não seja amigo, já tenha solicitado amizade ou já tenha recebido uma solicitação de amizade do usuário. </p>
      *
      * @param amigo Login do amigo a ser adicionado
      *
-     * @throws UsuarioJaTemRelacaoException       Exceção lançada caso o usuário já
-     *                                            seja amigo do usuário aberto na
-     *                                            sessão
-     * @throws UsuarioAutoRelacaoException        Exceção lançada caso o usuário
-     *                                            tente adicionar a si mesmo como
-     *                                            amigo
-     * @throws UsuarioJaSolicitouAmizadeException Exceção lançada caso o usuário já
-     *                                            tenha solicitado amizade ao amigo
-     * 
-     * @throws UsuarioEhInimigoException          Exceção lançada caso o usuário seja inimigo do usuário aberto na sessão
+     * @throws UsuarioJaTemRelacaoException        Exceção lançada caso o usuário já seja amigo do usuário aberto na sessão
+     * @throws UsuarioAutoRelacaoException         Exceção lançada caso o usuário tente adicionar a si mesmo como amigo
+     * @throws UsuarioJaSolicitouAmizadeException  Exceção lançada caso o usuário já tenha solicitado amizade ao amigo
+     * @throws UsuarioEhInimigoException           Exceção lançada caso o usuário seja inimigo do usuário aberto na sessão
      */
 
     public void adicionarAmigo(Usuario usuario, Usuario amigo)
@@ -380,6 +183,20 @@ public class Sistema {
     }
 
     /**
+     * <p> Retorna o último recado não lido do usuário. </p>
+     *
+     * @param usuario  O usuário do qual o recado será lido.
+     * @return         Recado do usuário.
+     *
+     * @throws NaoHaRecadosException Exceção lançada se não houver recados para ler.
+     */
+
+    public String lerRecado(Usuario usuario) throws NaoHaRecadosException {
+        Recado recado = usuario.lerRecado();
+        return recado.getRecado();
+    }
+
+    /**
      * <p> Retorna a comunidade do sistema pelo nome. </p>
      *
      * @param nome  Nome da comunidade.
@@ -399,7 +216,7 @@ public class Sistema {
     /**
      * <p> Cria uma comunidade no sistema. </p>
      *
-     * @param dono       Usuario dono da comunidade
+     * @param dono    Usuario dono da comunidade
      * @param nome       Nome da comunidade
      * @param descricao  Descricao da comunidade
      *
@@ -416,8 +233,22 @@ public class Sistema {
         Comunidade comunidade = new Comunidade(dono, nome, descricao);
         this.comunidades.put(nome, comunidade);
 
-        dono.setCriadorComunidade(comunidade);
+        dono.setDonoComunidade(comunidade);
         dono.setParticipanteComunidade(comunidade);
+    }
+
+    /**
+     * <p> Adiciona uma comunidade ao sistema. </p>
+     * <p><b>AVISO:</b> Método utilizado apenas para carregar os dados do arquivo.</p>
+     *
+     * @param nome        Nome da comunidade.
+     * @param comunidade  Comunidade a ser adicionada.
+     *
+     * @see Comunidade
+     */
+
+    public void setComunidade(String nome, Comunidade comunidade) {
+        this.comunidades.put(nome, comunidade);
     }
 
     /**
@@ -447,7 +278,7 @@ public class Sistema {
     public String getDonoComunidade(String nome) throws ComunidadeNaoExisteException {
         Comunidade comunidade = this.getComunidade(nome);
 
-        return comunidade.getCriador().getLogin();
+        return comunidade.getDono().getLogin();
     }
 
     /**
@@ -466,9 +297,9 @@ public class Sistema {
     }
 
     /**
-     * <p> Retorna as comunidades das quais o usuário é membro formatado em uma string. </p>
+     * <p> Retorna as comunidades das quais o usuário é membro formatado em uma {@code String}. </p>
      *
-     * @param usuario  Usuário.
+     * @param usuario  O usuário do qual as comunidades serão retornadas.
      * @return         Comunidades das quais o usuário é membro.
      */
 
@@ -479,7 +310,7 @@ public class Sistema {
     /**
      * <p> Adiciona um usuário a uma comunidade. </p>
      *
-     * @param usuario  Usuário.
+     * @param usuario  O usuário a ser adicionado.
      * @param nome     Nome da comunidade.
      *
      * @throws ComunidadeNaoExisteException        Exceção lançada caso a comunidade não exista.
@@ -498,15 +329,44 @@ public class Sistema {
         usuario.setParticipanteComunidade(comunidade);
     }
 
+    /**
+     * <p> Lê a mensagem de um usuário. </p>
+     *
+     * @param usuario  O usuário do qual a mensagem será lida.
+     * @return         Mensagem do usuário.
+     *
+     * @throws NaoHaMensagensException  Exceção lançada se não houver mensagens para ler.
+     */
+
     public String lerMensagem(Usuario usuario) throws NaoHaMensagensException {
-        return usuario.lerMensagem();
+        Mensagem mensagem = usuario.lerMensagem();
+        return mensagem.getMensagem();
     }
+
+    /**
+     * <p> Envia uma mensagem para uma comunidade. </p>
+     * <p> A mensagem será enviada para todos os membros da comunidade. </p>
+     *
+     * @param comunidade  A comunidade para a qual a mensagem será enviada.
+     * @param msg         A mensagem a ser enviada.
+     */
 
     public void enviarMensagem(Comunidade comunidade, String msg) {
         Mensagem mensagem = new Mensagem(msg);
 
         comunidade.enviarMensagem(mensagem);
     }
+
+    /**
+     * <p> Adiciona um usuário como fã de outro. </p>
+     *
+     * @param usuario  Usuário que será fã.
+     * @param idolo    Usuário que será ídolo.
+     *
+     * @throws UsuarioAutoRelacaoException   Exceção lançada caso o usuário tente adicionar a si mesmo como fã.
+     * @throws UsuarioJaTemRelacaoException  Exceção lançada caso o usuário já seja fã do usuário aberto na sessão.
+     * @throws UsuarioEhInimigoException     Exceção lançada caso o usuário seja inimigo do usuário aberto na sessão.
+     */
 
     public void adicionarIdolo(Usuario usuario, Usuario idolo)
             throws UsuarioAutoRelacaoException, UsuarioJaTemRelacaoException, UsuarioEhInimigoException {
@@ -524,9 +384,29 @@ public class Sistema {
         idolo.setFa(usuario);
     }
 
+    /**
+     * <p> Retorna os fãs do usuário formatados em uma {@code String}. </p>
+     *
+     * @param usuario  O usuário do qual os fãs serão retornados.
+     * @return         Fãs do usuário.
+     *
+     * @see UtilsString
+     */
+
     public String getFas(Usuario usuario) {
         return UtilsString.formatArrayList(usuario.getFas());
     }
+
+    /**
+     * <p> Adiciona um usuário como paquera de outro. </p>
+     *
+     * @param usuario Usuário que irá paquerar.
+     * @param paquera Usuário que será paquerado.
+     *
+     * @throws UsuarioAutoRelacaoException   Exceção lançada caso o usuário tente adicionar a si mesmo como paquera.
+     * @throws UsuarioJaTemRelacaoException  Exceção lançada caso o usuário já seja paquera do usuário aberto na sessão.
+     * @throws UsuarioEhInimigoException     Exceção lançada caso o usuário seja inimigo do usuário aberto na sessão.
+     */
 
     public void adicionarPaquera(Usuario usuario, Usuario paquera)
             throws UsuarioAutoRelacaoException, UsuarioJaTemRelacaoException, UsuarioEhInimigoException {
@@ -549,9 +429,28 @@ public class Sistema {
         paquera.setPaquerasRecebidas(usuario);
     }
 
+    /**
+     * <p> Retorna os paqueras do usuário formatados como uma {@code String}. </p>
+     *
+     * @param usuario  O usuário do qual os paqueras serão retornados.
+     * @return         Paqueras do usuário.
+     *
+     * @see UtilsString
+     */
+
     public String getPaqueras(Usuario usuario) {
         return UtilsString.formatArrayList(usuario.getPaqueras());
     }
+
+    /**
+     * <p> Adiciona um usuário como inimigo de outro. </p>
+     *
+     * @param usuario Usuário que irá adicionar o inimigo.
+     * @param inimigo Usuário que será inimigo.
+     *
+     * @throws UsuarioAutoRelacaoException   Exceção lançada caso o usuário tente adicionar a si mesmo como inimigo.
+     * @throws UsuarioJaTemRelacaoException  Exceção lançada caso o usuário já seja inimigo do usuário aberto na sessão.
+     */
 
     public void adicionarInimigo(Usuario usuario, Usuario inimigo)
             throws UsuarioAutoRelacaoException, UsuarioJaTemRelacaoException {
@@ -567,41 +466,32 @@ public class Sistema {
         inimigo.setInimigo(usuario);
     }
 
+    /**
+     * <p> Verifica se o usuário é inimigo do usuário aberto na sessão. </p>
+     * <p> Caso seja, lança uma exceção. </p>
+     *
+     * @param usuario Usuário que irá verificar.
+     * @param inimigo O inimigo que será verificado.
+     *
+     * @throws UsuarioEhInimigoException Exceção lançada caso o usuário seja inimigo do usuário aberto na sessão.
+     */
+
     public void verificarInimigo(Usuario usuario, Usuario inimigo) throws UsuarioEhInimigoException {
         if (usuario.getInimigos().contains(inimigo)) {
             throw new UsuarioEhInimigoException(inimigo.getNome());
         }
     }
 
-//     # User Story 9 - Remoção de conta - Permita a um usuário encerrar sua conta no Jackut. Todas as suas informações devem sumir do sistema: relacionamentos, mensagens enviadas, perfil.
+    /**
+     * <p> Remove um usuário do sistema. </p>
+     * <p> Remove o usuário de todas as comunidades, remove os recados enviados e recebidos pelo usuário e remove o usuário do sistema, junto de todos os seus relacionamentos </p>
+     *
+     * @param usuario  Usuário a ser removido.
+     * @param id       ID da sessão do usuário.
+     *
+     * @throws UsuarioNaoCadastradoException Exceção lançada caso o usuário não esteja cadastrado.
+     */
 
-// zerarSistema
-
-// criarUsuario login=jpsauve senha=sauvejp nome="Jacques Sauve"
-// s1=abrirSessao login=jpsauve senha=sauvejp
-
-// criarUsuario login=oabath senha=abatho nome="Osorio Abath"
-// s2=abrirSessao login=oabath senha=abatho
-
-// enviarRecado id=${s1} destinatario=oabath recado="Ola"
-// criarComunidade id=${s1} nome="UFCG" descricao="Comunidade para professores, alunos e funcionários da UFCG"
-// adicionarComunidade id=${s2} nome="UFCG"
-// adicionarAmigo id=${s2} amigo=jpsauve
-
-// removerUsuario id=${s1}
-
-// expectError "Usuário não cadastrado." getAtributoUsuario login=jpsauve atributo=nome
-// expectError "Comunidade não existe." getDescricaoComunidade nome="UFCG"
-// expect {} getComunidades login=oabath
-// expect {} getAmigos login=oabath
-// expectError "Não há recados." lerRecado id=${s2}
-
-// # tratamento de erros
-
-// expectError "Usuário não cadastrado." removerUsuario id=${s1}
-
-// encerrarSistema
-// quit
     public void removerUsuario(Usuario usuario, String id) throws UsuarioNaoCadastradoException {
         for (Usuario amigo : usuario.getAmigos()) {
             amigo.removerAmigo(usuario);
@@ -632,16 +522,16 @@ public class Sistema {
         }
 
         for (Comunidade comunidade : this.comunidades.values()) {
-            if (comunidade.getCriador().equals(usuario)) {
+            if (comunidade.getDono().equals(usuario)) {
                 for (Usuario membro : comunidade.getMembros()) {
-                    membro.removerComunidade(comunidade);
+                    membro.sairComunidade(comunidade);
                 }
                 this.comunidades.remove(comunidade.getNome());
             }
         }
 
         for (Usuario destinatario : this.usuarios.values()) {
-            for (Recado recado : destinatario.getRecados()) { // O(n^2)
+            for (Recado recado : destinatario.getRecados()) {
                 if (recado.getRemetente().equals(usuario)) {
                     destinatario.removerRecado(recado);
                 }
@@ -660,11 +550,8 @@ public class Sistema {
         this.usuarios = new HashMap<>();
         this.sessoes = new HashMap<>();
         this.comunidades = new HashMap<>();
-        try {
-            UtilsFileHandler.limparArquivos();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+        UtilsFileWriter.limparArquivos();
     }
 
     /**
@@ -678,12 +565,7 @@ public class Sistema {
      */
 
     public void encerrarSistema() throws AtributoNaoPreenchidoException {
-        try {
-            UtilsFileHandler.criarPasta();
-
-            UtilsFileHandler.persistirDados(this.usuarios, this.comunidades);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        UtilsFileWriter.criarPasta();
+        UtilsFileWriter.persistirDados(this.usuarios, this.comunidades);
     }
 }

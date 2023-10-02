@@ -1,5 +1,6 @@
 package br.ufal.ic.p2.jackut.Exceptions.Comunidade;
 
+
 /**
  * <p> Exceção que indica que a comunidade não existe. </p>
  */
